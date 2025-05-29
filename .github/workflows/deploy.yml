@@ -38,6 +38,7 @@ jobs:
     - name: Build imagen Docker
       run: docker build -t springboot-app .
 
+
     - name: Copia imagen a EC2
       run: |
         docker save springboot-app | bzip2 | ssh -i ~/.ssh/id_rsa ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} 'bunzip2 | docker load'
