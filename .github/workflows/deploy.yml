@@ -44,15 +44,19 @@ jobs:
         docker save springboot-app | bzip2 | ssh -i ~/.ssh/id_rsa ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} 'bunzip2 | docker load'
 
     - name: Ejecutar contenedor en EC2
-      run: |
-        ssh -i ~/.ssh/id_rsa ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << EOF
-          docker stop springboot-app || true
-          docker rm springboot-app || true
-          docker run -d --name springboot-app -p 8080:8080 \
-            -e DB_HOST=${{ secrets.DB_HOST }} \
-            -e DB_PORT=3306 \
-            -e DB_NAME=demo \
-            -e DB_USER=admin \
-            -e DB_PASSWORD=${{ secrets.DB_PASSWORD }} \
-            springboot-app
-        EOF
+  run: |
+    ssh -i ~/.ssh/id_rsa ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
+      docker stop springboot-app || true
+      docker rm springboot-app || true
+
+      docker run -d --name springboot-app -p 8080:8080 \
+        -e DB_HOST="${DB_HOST}" \
+        -e DB_PORT=3306 \
+        -e DB_NAME=demo \
+        -e DB_USER=admin \
+        -e DB_PASSWORD="${DB_PASSWORD}" \
+        springboot-app
+    EOF
+  env:
+    DB_HOST: ${{ secrets.DB_HOST }}
+    DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
