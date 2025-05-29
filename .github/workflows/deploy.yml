@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout código
+    - name: Checkout código 
       uses: actions/checkout@v3
 
     - name: Configura SSH
@@ -32,6 +32,8 @@ jobs:
     - name: Build del proyecto con Maven
       run: mvn clean package -DskipTests
 
+    - name: Verifica el .jar generado
+      run: ls -lh target/
 
     - name: Build imagen Docker
       run: docker build -t springboot-app .
