@@ -10,53 +10,52 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout código 
-      uses: actions/checkout@v3
+      - name: Checkout código
+        uses: actions/checkout@v3
 
-    - name: Configura SSH
-      run: |
-        mkdir -p ~/.ssh
-        echo "${{ secrets.EC2_KEY }}" > ~/.ssh/id_rsa
-        chmod 600 ~/.ssh/id_rsa
-        ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
-    
-    - name: Setup Java 21
-      uses: actions/setup-java@v3
-      with:
-        distribution: 'temurin'
-        java-version: '21'
-    
-    - name: Build con Maven
-      run: mvn clean package -DskipTests
+      - name: Configura SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.EC2_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
 
-    - name: Build del proyecto con Maven
-      run: mvn clean package -DskipTests
+      - name: Setup Java 21
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: '21'
 
-    - name: Verifica el .jar generado
-      run: ls -lh target/
+      - name: Build con Maven
+        run: mvn clean package -DskipTests
 
-    - name: Build imagen Docker
-      run: docker build -t springboot-app .
+      - name: Verifica el .jar generado
+        run: ls -lh target/
 
+      - name: Build imagen Docker
+        run: docker build -t springboot-app .
 
-    - name: Copia imagen a EC2
-      run: |
-        docker save springboot-app | bzip2 | ssh -i ~/.ssh/id_rsa ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} 'bunzip2 | docker load'
+      - name: Copia imagen a EC2
+        run: |
+          docker save springboot-app | bzip2 | ssh -i ~/.ssh/id_rsa ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} 'bunzip2 | docker load'
 
-    - name: Ejecutar contenedor en EC2
-  run: |
-    ssh -i ~/.ssh/id_rsa ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
-      docker stop springboot-app || true
-      docker rm springboot-app || true
+      - name: Ejecutar contenedor en EC2
+        env:
+          DB_USER: ${{ secrets.DB_USER }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          DB_HOST: apfl.us-west-1.rds.amazonaws.com
+          DB_PORT: 3306
+          DB_NAME: mydatabase-mysql
+        run: |
+          ssh -i ~/.ssh/id_rsa ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << "EOF"
+            docker stop springboot-app || true
+            docker rm springboot-app || true
 
-      docker run -d --name springboot-app -p 8080:8080 \
-        -e DB_HOST="${DB_HOST}" \
-        -e DB_PORT=3306 \
-        -e DB_NAME=demo \
-        -e DB_USER=admin \
-        -e DB_PASSWORD="${DB_PASSWORD}" \
-        springboot-app
-    EOF
-  env:
-    DB_HOST: ${{ secrets.DB_HOST }}
-    DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+            docker run -d --name springboot-app -p 8080:8080 \
+              -e DB_HOST="${DB_HOST}" \
+              -e DB_PORT="${DB_PORT}" \
+              -e DB_NAME="${DB_NAME}" \
+              -e DB_USER="${DB_USER}" \
+              -e DB_PASSWORD="${DB_PASSWORD}" \
+              springboot-app
+          EOF
