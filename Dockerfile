@@ -1,9 +1,6 @@
-FROM eclipse-temurin:21-jdk-alpine
-
+FROM openjdk:21-jdk-slim
 VOLUME /tmp
-
-# Copia cualquier .jar generado
-COPY target/*.jar app.jar
-
-ENTRYPOINT ["java", "-jar", "/app.jar"]
+ARG JAR_FILE
+COPY ${JAR_FILE} app.jar
+ENTRYPOINT ["java","-jar","/app.jar"]
 
