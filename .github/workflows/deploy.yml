@@ -29,6 +29,10 @@ jobs:
     - name: Build con Maven
       run: mvn clean package -DskipTests
 
+    - name: Build del proyecto con Maven
+      run: mvn clean package -DskipTests
+
+
     - name: Build imagen Docker
       run: docker build -t springboot-app .
 
